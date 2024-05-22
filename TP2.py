@@ -32,12 +32,65 @@ def lireDonneesCsv(nomFichier):
 
     return donnees_geo
 "2.4. Fonction ecrireDonneesJson(nomFichier,listeObjDonneesGeo)"
-def ecrireDonneesJson(nomFichier,listeObjDonneesGeo):
-    pass
+def ecrireDonneesJson(nomFichier, listeObjDonneesGeo):
+    # Créer liste dictionnaires à partir des objets DonneesGeo
+    liste_dict = []
+    for obj in listeObjDonneesGeo:
+        # Convertir objet en dictionnaire
+        obj_dict = {
+            'ville': obj.ville,
+            'pays': obj.pays,
+            'latitude': obj.latitude,
+            'longitude': obj.longitude
+        }
+        liste_dict.append(obj_dict)
+
+    # Ouvrir fichier en mode écriture et sauvegarder la liste de dictionnaires en JSON
+    with open(nomFichier, 'w') as jsonfile:
+        json.dump(liste_dict, jsonfile, indent=4)
+
 
 "2.5. Fonction trouverDistanceMin(nomFichier)"
+def haversine(lat1, lon1, lat2, lon2):
+    # Rayon de la Terre en km
+    R = 6371
+
+    # Convertion des latitudes et longitudes de degrés en radians
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    # Formule Haversine
+    a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = R * c
+
+    return distance
+
 def trouverDistanceMin(nomFichier):
-    pass
+    with open(nomFichier, 'r') as jsonfile:
+        liste_donnees = json.load(jsonfile)
+        min_distance = float('inf')
+        ville1, ville2 = None, None
+        for i in range(len(liste_donnees)):
+            for j in range(i + 1, len(liste_donnees)):
+                villeA = liste_donnees[i]
+                villeB = liste_donnees[j]
+                distance = haversine(villeA['latitude'], villeA['longitude'], villeB['latitude'], villeB['longitude'])
+                if distance < min_distance:
+                    min_distance = distance
+                    ville1, ville2 = villeA, villeB
+
+        if ville1 and ville2:
+            print(f"Distance minimale en kilomètres entre 2 villes : "
+                  f"Ville 1 : {ville1['ville']} {ville1['pays']} {ville1['latitude']} {ville1['longitude']} et "
+                  f"Ville 2 : {ville2['ville']} {ville2['pays']} {ville2['latitude']} {ville2['longitude']} "
+                  f"Distance en kilomètres : {min_distance}")
+
+            with open('distances.csv', 'w', newline='') as csvfile:
+                csvfile.write(f"{ville1['ville']}, {ville2['ville']}, {min_distance}\n")
+
 "2.6. Menu"
 def menu():
     while True:
